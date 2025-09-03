@@ -1,0 +1,197 @@
+**
+**```html**
+**<!DOCTYPE html>**
+**<html lang="ko">**
+**<head>**
+** <meta charset="UTF-8">**
+** <meta name="viewport" content="width=device-width, initial-scale=1.0">**
+** <title>데이터로 보는 건축 이야기</title>**
+** <!-- Inter Font -->**
+** <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">**
+** <!-- Tailwind CSS CDN -->**
+** <script src="https://cdn.tailwindcss.com"></script>**
+** <style>**
+** body {**
+** font-family: 'Inter', sans-serif;**
+** }**
+** </style>**
+**</head>**
+**<body class="bg-gray-50 text-gray-800">**
+** <!-- Navigation Bar -->**
+** <nav class="bg-white shadow-sm sticky top-0 z-50">**
+** <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">**
+** <div class="flex justify-between h-16 items-center">**
+** <div class="flex-shrink-0 text-2xl font-bold text-blue-600">**
+** <a href="#">Archidata</a>**
+** </div>**
+** <div class="hidden md:flex space-x-8">**
+** <a href="#home" class="text-gray-600 hover:text-blue-600 font-medium transition duration-300">홈</a>**
+** <a href="#about" class="text-gray-600 hover:text-blue-600 font-medium transition duration-300">연구 소개</a>**
+** <a href="#results" class="text-gray-600 hover:text-blue-600 font-medium transition duration-300">연구 결과</a>**
+** <a href="#methods" class="text-gray-600 hover:text-blue-600 font-medium transition duration-300">연구 방법</a>**
+** <a href="#contact" class="text-gray-600 hover:text-blue-600 font-medium transition duration-300">연구팀</a>**
+** </div>**
+** <div class="md:hidden">**
+** <!-- Mobile menu button, needs JS for functionality -->**
+** <button type="button" class="text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500" aria-controls="mobile-menu" aria-expanded="false">**
+** <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">**
+** <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />**
+** </svg>**
+** </button>**
+** </div>**
+** </div>**
+** </div>**
+** </nav>**
+
+** <!-- Main Content Area -->**
+** <main class="py-12">**
+** <!-- Home Section -->**
+** <section id="home" class="text-center py-20 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-b-3xl shadow-xl mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">**
+** <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight">**
+** 데이터가 들려주는 <br class="sm:hidden"> 건축물의 비밀**
+** </h1>**
+** <p class="mt-4 text-lg sm:text-xl text-gray-600">**
+** AI와 함께 과거를 분석하고 미래를 상상하는 건축 탐험**
+** </p>**
+** <div class="mt-8 flex justify-center">**
+** <a href="#results" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:bg-blue-700 transition duration-300 transform hover:scale-105">**
+** 분석 결과 보러가기**
+** </a>**
+** </div>**
+** </section>**
+
+** <!-- About Section -->**
+** <section id="about" class="py-16 bg-white mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-12 rounded-xl shadow-lg">**
+** <h2 class="text-3xl font-bold text-center text-gray-900">연구 소개</h2>**
+** <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">**
+** <!-- Card 1: 융합 연구 -->**
+** <div class="p-6 bg-blue-50 rounded-xl shadow-md transform hover:scale-105 transition duration-300">**
+** <div class="text-4xl text-blue-600 mb-4">🔬</div>**
+** <h3 class="text-xl font-semibold mb-2">융합 연구의 시작</h3>**
+** <p class="text-gray-700">**
+** 건축의 아름다움을 단순히 감상하는 것을 넘어, 정보과학 기술을 활용해 건축 양식의 특징을 수치(데이터)로 정량화했습니다. 이는 인문학과 과학의 경계를 허무는 새로운 시도입니다.**
+** </p>**
+** </div>**
+** <!-- Card 2: 미래 예측 -->**
+** <div class="p-6 bg-green-50 rounded-xl shadow-md transform hover:scale-105 transition duration-300">**
+** <div class="text-4xl text-green-600 mb-4">⏳</div>**
+** <h3 class="text-xl font-semibold mb-2">과거를 통한 미래 예측</h3>**
+** <p class="text-gray-700">**
+** 과거 건축물의 이미지만 분석한 게 아닙니다. 각 시대의 기술, 기후, 사회적 배경 데이터와 건축 양식 데이터의 관계를 파악하여, 미래의 변화에 가장 잘 맞는 건축물이 어떤 모습일지 예측해 보았습니다.**
+** </p>**
+** </div>**
+** <!-- Card 3: AI와 함께 -->**
+** <div class="p-6 bg-purple-50 rounded-xl shadow-md transform hover:scale-105 transition duration-300">**
+** <div class="text-4xl text-purple-600 mb-4">🧠</div>**
+** <h3 class="text-xl font-semibold mb-2">AI와 함께하는 창의적 탐험</h3>**
+** <p class="text-gray-700">**
+** 딥러닝(AI) 모델을 사용하여 수천 장의 이미지를 분석하고, 그 결과를 바탕으로 미래에 등장할 법한 가상의 건축물 이미지를 생성하는 실험도 진행했습니다.**
+** </p>**
+** </div>**
+** </div>**
+** </section>**
+
+** <!-- Results Section -->**
+** <section id="results" class="py-16 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">**
+** <h2 class="text-3xl font-bold text-center text-gray-900">연구 결과</h2>**
+** <div class="mt-12 space-y-12">**
+** <!-- Result 1: 시대별 색상 변화 -->**
+** <div class="bg-white p-8 rounded-xl shadow-lg">**
+** <h3 class="text-2xl font-semibold text-gray-800">시대별 색상 변화 분석</h3>**
+** <p class="mt-4 text-gray-600">**
+** 과거 건축물은 어떤 색을 좋아했을까요? 저희가 분석한 데이터에 따르면, 시대에 따라 선호하는 색상 팔레트가 뚜렷하게 달라졌습니다.**
+** </p>**
+** <!-- Placeholder for Chart/Image -->**
+** <div class="mt-6 w-full h-64 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500">**
+** [시대별 건축물 색상 팔레트 비교 그래프 또는 이미지 삽입 공간]**
+** </div>**
+** </div>**
+
+** <!-- Result 2: 형태적 특징 변화 -->**
+** <div class="bg-white p-8 rounded-xl shadow-lg">**
+** <h3 class="text-2xl font-semibold text-gray-800">형태적 특징의 변화</h3>**
+** <p class="mt-4 text-gray-600">**
+** 건축물의 곡선과 직선 비율은 시대에 따라 어떻게 달라졌을까요? 바로크 건축은 곡선이, 모더니즘 건축은 직선이 압도적으로 많았습니다.**
+** </p>**
+** <!-- Placeholder for Chart/Image -->**
+** <div class="mt-6 w-full h-64 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500">**
+** [시대별 곡선/직선 비율 비교 차트 또는 이미지 삽입 공간]**
+** </div>**
+** </div>**
+
+** <!-- Result 3: 미래 건축 동향 예측 -->**
+** <div class="bg-white p-8 rounded-xl shadow-lg">**
+** <h3 class="text-2xl font-semibold text-gray-800">미래 건축 동향 예측</h3>**
+** <p class="mt-4 text-gray-600">**
+** 기후 위기와 기술 발전이라는 두 가지 변수가 건축물을 만난다면? 저희의 AI 모델은 미래 건축물이 다음과 같은 특징을 가질 것으로 예측했습니다.**
+** </p>**
+** <div class="mt-6 w-full h-96 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500">**
+** [AI가 생성한 미래 건축물 이미지 갤러리 삽입 공간]**
+** </div>**
+** </div>**
+** </div>**
+** </section>**
+
+** <!-- Methods Section -->**
+** <section id="methods" class="py-16 bg-white mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 rounded-xl shadow-lg">**
+** <h2 class="text-3xl font-bold text-center text-gray-900">연구 방법</h2>**
+** <div class="mt-12 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">**
+** <!-- Step 1: Idea -->**
+** <div class="text-center p-4">**
+** <div class="w-16 h-16 bg-blue-100 rounded-full mx-auto flex items-center justify-center text-3xl mb-4">💡</div>**
+** <p class="font-semibold text-gray-700">아이디어 구상</p>**
+** <p class="text-sm text-gray-500 mt-2">연구하고 싶은 질문을 명확히 정의합니다.</p>**
+** </div>**
+** <!-- Step 2: Data Collection -->**
+** <div class="text-center p-4">**
+** <div class="w-16 h-16 bg-green-100 rounded-full mx-auto flex items-center justify-center text-3xl mb-4">📷</div>**
+** <p class="font-semibold text-gray-700">데이터 수집</p>**
+** <p class="text-sm text-gray-500 mt-2">수천 장의 건축물 사진과 시대별 데이터를 모았습니다.</p>**
+** </div>**
+** <!-- Step 3: Analysis -->**
+** <div class="text-center p-4">**
+** <div class="w-16 h-16 bg-yellow-100 rounded-full mx-auto flex items-center justify-center text-3xl mb-4">💻</div>**
+** <p class="font-semibold text-gray-700">데이터 분석</p>**
+** <p class="text-sm text-gray-500 mt-2">파이썬 코딩으로 이미지 속 특징을 데이터로 만들었습니다.</p>**
+** </div>**
+** <!-- Step 4: Visualization -->**
+** <div class="text-center p-4">**
+** <div class="w-16 h-16 bg-red-100 rounded-full mx-auto flex items-center justify-center text-3xl mb-4">📈</div>**
+** <p class="font-semibold text-gray-700">모델 학습 및 예측</p>**
+** <p class="text-sm text-gray-500 mt-2">수집된 데이터를 AI 모델에 넣어 미래를 예측하게 했습니다.</p>**
+** </div>**
+** </div>**
+** <div class="mt-12 text-center text-gray-500">**
+** <p>주요 사용 도구: Python, OpenCV, Matplotlib, Seaborn</p>**
+** </div>**
+** </section>**
+
+** <!-- Contact Section -->**
+** <section id="contact" class="py-16 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">**
+** <h2 class="text-3xl font-bold text-center text-gray-900">연구팀</h2>**
+** <div class="mt-12 flex flex-wrap justify-center gap-8">**
+** <!-- Member 1 -->**
+** <div class="w-full sm:w-1/2 md:w-1/3 lg:w-1/4 p-4 text-center">**
+** <div class="bg-gray-200 w-32 h-32 rounded-full mx-auto mb-4 flex items-center justify-center text-gray-500">**
+** [연구자 사진]**
+** </div>**
+** <h4 class="font-bold text-xl">양시경</h4>**
+** <p class="text-gray-600">연구자</p>**
+** </div>**
+** </div>**
+** <div class="mt-12 text-center">**
+** <p class="text-lg font-medium text-gray-700">연구에 대해 궁금한 점이 있으신가요?</p>**
+** <a href="mailto:your_email@example.com" class="mt-4 inline-block bg-blue-500 text-white font-bold py-2 px-6 rounded-full hover:bg-blue-600 transition duration-300">문의하기</a>**
+** </div>**
+** </section>**
+** </main>**
+
+** <!-- Footer -->**
+** <footer class="bg-gray-800 text-white text-center py-6 mt-12 rounded-t-3xl shadow-inner">**
+** <p>&copy; 2025 Archidata. All Rights Reserved.</p>**
+** </footer>**
+
+**</body>**
+**</html>**
+**```**
+**
