@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>업데이트된 부대 배치 시뮬레이션</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #e2e8f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+    </style>
+</head>
+<body class="p-4">
+
+    <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">부대 배치 시뮬레이션</h1>
+        <p class="text-center text-gray-600 mb-8">
+            병사 <span class="font-semibold text-blue-600">신윤수</span> 님에게 부대를 무작위로 배정합니다.
+        </p>
+
+        <div class="space-y-4">
+            <div>
+                <label for="seedInput" class="block text-sm font-medium text-gray-700">
+                    시드값 입력 (숫자만)
+                </label>
+                <input type="number" id="seedInput" placeholder="비워두면 기본값 42 사용"
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 transition duration-150 ease-in-out p-2 border">
+            </div>
+
+            <button onclick="runSimulation()"
+                    class="w-full bg-blue-600 text-white font-semibold py-3 rounded-md shadow-md hover:bg-blue-700 transition duration-300 ease-in-out">
+                부대 배치하기
+            </button>
+        </div>
+
+        <div id="result" class="mt-8 p-6 bg-blue-50 border border-blue-200 rounded-lg text-center min-h-[100px] flex items-center justify-center">
+            <p class="text-gray-500">여기에 배치 결과가 표시됩니다.</p>
+        </div>
+
+        <div class="mt-6 text-xs text-gray-400 text-center">
+            <p><strong>업데이트된 배치 가능 부대 목록:</strong></p>
+            <p>23사단 철벽부대, 23사단 철벽부대, 1사단 전진부대, 9사단 백마부대, 7사단 칠성부대, 육군특수전사령부, 해병대 1사단, UDT/SEAL, HID, UDU, 제2신속대응사단, SRB, 제35특수임무대대, <span class="text-gray-800">707특임대, 공군 공정통제사, 폭발물처리대, 제6탐색구조비행전대, 제700특공연대, 제701특공연대, 제702특공연대, 제703특공연대, 제705특공연대, 수도기계화보병사단, 연평부대, 군사경찰 특수임무대, 해난구조전대</span></p>
+        </div>
+    </div>
+
+    <script>
+        // Python의 random.seed()와 유사한 기능을 구현하기 위한 함수입니다.
+        // 이 함수는 주어진 시드값에 따라 일정한 난수를 생성합니다.
+        function seededRandom(seed) {
+            let currentSeed = seed;
+            return function() {
+                // LCG(Linear Congruential Generator) 알고리즘을 사용합니다.
+                currentSeed = (currentSeed * 9301 + 49297) % 233280;
+                return currentSeed / 233280;
+            };
+        }
+
+        function runSimulation() {
+            // 병사 이름 및 업데이트된 부대 목록 정의
+            const name = '신윤수';
+            const units = [
+                '23사단 철벽부대', '23사단 철벽부대', '1사단 전진부대',
+                '9사단 백마부대', '7사단 칠성부대', '육군특수전사령부',
+                '해병대 1사단', 'UDT/SEAL', 'HID', 'UDU',
+                '제2신속대응사단', 'SRB', '제35특수임무대대',
+                '707특임대', '공군 공정통제사', '폭발물처리대', '제6탐색구조비행전대',
+                '제700특공연대', '제701특공연대', '제702특공연대', '제703특공연대',
+                '제705특공연대', '수도기계화보병사단', '연평부대', '군사경찰 특수임무대', '해난구조전대'
+            ];
+
+            // 사용자 입력 처리
+            let seedInput = document.getElementById('seedInput').value;
+            let s;
+
+            try {
+                if (seedInput === null || seedInput.trim() === '') {
+                    throw new Error("입력이 비어있습니다.");
+                }
+                s = parseInt(seedInput);
+                if (isNaN(s)) {
+                    throw new Error("숫자가 아닙니다.");
+                }
+            } catch (e) {
+                console.warn(`안내: ${e.message}. 기본 시드값 42를 사용합니다.`);
+                s = 42;
+            }
+
+            // 시드값을 기반으로 난수 생성기 초기화
+            const getRandomNumber = seededRandom(s);
+
+            // 무작위로 부대 하나를 선택
+            const randomIndex = Math.floor(getRandomNumber() * units.length);
+            const assignedUnit = units[randomIndex];
+
+            // 결과를 HTML에 표시
+            const resultElement = document.getElementById('result');
+            resultElement.innerHTML = `
+                <div class="space-y-2">
+                    <p class="text-xl font-bold text-gray-800">
+                        <span class="text-blue-600">${assignedUnit}</span>! 신윤수씨! 당신 군생활은 조졌습니다! 수고하세요.
+                    </p>
+                    <p class="text-sm text-gray-500">사용된 시드값: ${s}</p>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
