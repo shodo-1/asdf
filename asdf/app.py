@@ -4,16 +4,34 @@ import os
 # Set page configuration
 st.set_page_config(layout="wide")
 
-# Path to the HTML file inside the 'htmls' folder
-html_file_path = os.path.join(os.path.dirname(__file__), 'htmls', 'index.html')
+st.title("HTML 파일 뷰어")
 
-# Check if the HTML file exists
-if not os.path.exists(html_file_path):
-    st.error("HTML 파일을 찾을 수 없습니다. 'htmls' 폴더 안에 'index.html' 파일이 올바르게 있는지 확인해주세요.")
+# Path to the 'htmls' folder
+htmls_folder_path = os.path.join(os.path.dirname(__file__), 'htmls')
+
+# Get a list of HTML files in the 'htmls' folder
+try:
+    html_files = [f for f in os.listdir(htmls_folder_path) if f.endswith('.html')]
+except FileNotFoundError:
+    st.error("'htmls' 폴더를 찾을 수 없습니다. 'app.py'와 같은 디렉토리에 'htmls' 폴더를 생성해주세요.")
+    html_files = []
+
+if not html_files:
+    st.warning("'htmls' 폴더에 HTML 파일이 없습니다.")
 else:
-    # Read the content of the HTML file
-    with open(html_file_path, 'r', encoding='utf-8') as f:
-        html_content = f.read()
+    # Use a selectbox in the sidebar to choose the HTML file
+    selected_file = st.sidebar.selectbox("표시할 HTML 파일을 선택하세요:", html_files)
 
-    # Use a Streamlit component to display the HTML content
-    st.components.v1.html(html_content, height=1000, scrolling=True)
+    # Construct the full path to the selected HTML file
+    selected_html_path = os.path.join(htmls_folder_path, selected_file)
+
+    # Read and display the content of the selected HTML file
+    try:
+        with open(selected_html_path, 'r', encoding='utf-8') as f:
+            html_content = f.read()
+
+        # Display the HTML content using a Streamlit component
+        st.components.v1.html(html_content, height=800, scrolling=True)
+
+    except FileNotFoundError:
+        st.error(f"'{selected_file}' 파일을 찾을 수 없습니다.")
