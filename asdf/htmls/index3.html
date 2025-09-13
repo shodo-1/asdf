@@ -35,7 +35,6 @@
             transition: transform 0.3s ease-in-out;
             animation: fadeIn 0.5s ease-in-out;
         }
-
         .star-3 { background-color: #4c51bf; }
         .star-4 { background-color: #63b3ed; }
         .star-5 { background-color: #ecc94b; }
@@ -49,23 +48,45 @@
              font-size: 0.75rem;
              margin-top: 0.5rem;
         }
-
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+        .item-image {
+            width: 100px;
+            height: 100px;
+            border-radius: 0.5rem;
+            margin-bottom: 0.5rem;
+            object-fit: cover;
         }
     </style>
 </head>
 <body class="bg-gray-900 text-white min-h-screen flex flex-col items-center justify-center p-4">
 
     <div class="bg-gray-800 p-8 rounded-lg shadow-xl w-full max-w-2xl flex flex-col items-center space-y-6">
-        <h1 class="text-4xl font-bold mb-4 text-center text-yellow-300">가챠 시뮬레이터</h1>
+        <h1 class="text-4xl font-bold mb-4 text-center text-yellow-300">윤수 를 믿기</h1>
 
+        <div class="w-full text-center p-4 rounded-md border border-gray-700">
+            <h2 class="text-xl font-bold mb-2">게임 규칙</h2>
+            <ul class="text-sm text-gray-400 space-y-1 text-left">
+                <li>1회 뽑기는 160 쌀숭이재화가 소모되며, 10회 뽑기는 1600 재화가 소모됩니다.</li>
+                <li>쌀숭이재화 획득 버튼을 누르면 80 재화를 얻습니다.</li>
+                <li>10회 뽑기 시 최소 1개의 4성 아이템이 보장됩니다.</li>
+                <li>10회 뽑기 시 5성 아이템은 최대 3개까지만 나옵니다.</li>
+                <li>픽뚫 아이템이 나오면 다음 5성은 반드시 픽업 아이템으로 나옵니다.</li>
+                <li>74회차부터 5성 확률이 증가하며, 90회차에는 5성이 확정으로 나옵니다.</li>
+                <li>**5성이 나오면 5성 뽑기 횟수가 초기화됩니다.**</li>
+            </ul>
+        </div>
+        
         <div class="w-full text-center p-4 rounded-md">
             <p class="text-lg font-semibold mb-2">5성 확률: <span id="probabilityDisplay" class="text-yellow-400">0.6%</span></p>
-            <p class="text-lg font-semibold mb-2">총 뽑기 횟수: <span id="countDisplay" class="text-yellow-400">0</span></p>
-            <p class="text-lg font-semibold mb-2">보유 재화: <span id="currencyDisplay" class="text-green-400">0</span></p>
-            <p class="text-sm text-gray-400">74회차부터 5성 확률이 증가합니다. 90회차에는 5성이 확정으로 나옵니다.</p>
+            <p class="text-lg font-semibold mb-2">총 뽑기 횟수: <span id="drawCountDisplay" class="text-yellow-400">0</span></p>
+            <p class="text-lg font-semibold mb-2">5성 등장까지 뽑기 횟수: <span id="pityCountDisplay" class="text-yellow-400">0</span></p>
+            <p class="text-lg font-semibold mb-2 flex items-center justify-center space-x-2">
+                보유 재화: <span id="currencyDisplay" class="text-green-400">0</span>
+                <img src="https://placehold.co/40x40/333333/FFFFFF?text=%EC%8C%80%EC%88%AD%EC%9D%B4" alt="쌀숭이재화" class="w-10 h-10 rounded-full">
+            </p>
         </div>
 
         <div class="w-full flex justify-center space-x-4">
@@ -94,14 +115,15 @@
             const resultContainer = document.getElementById('resultContainer');
             const logList = document.getElementById('logList');
             const probabilityDisplay = document.getElementById('probabilityDisplay');
-            const countDisplay = document.getElementById('countDisplay');
+            const drawCountDisplay = document.getElementById('drawCountDisplay');
+            const pityCountDisplay = document.getElementById('pityCountDisplay');
             const currencyDisplay = document.getElementById('currencyDisplay');
             const messageDisplay = document.getElementById('message');
 
-            let drawCount = 0;
+            let drawCount = 0; // 총 뽑기 횟수
+            let pityCount = 0; // 5성 등장까지 뽑기 횟수
             let currentCurrency = 0;
             let guaranteedPickup = false;
-            let consecutivePulls = 0;
 
             const COST_ONE = 160;
             const COST_TEN = 1600;
@@ -122,6 +144,17 @@
                 '5성 픽뚫': ["어둠의 인도자 윤수오", "포켓 윤수", "아케이드 윤수", "프로젝트:윤수", "할로우 나이트 윤수", "대윤수", "K/DA 윤수", "HEARTSTEEL 윤수"]
             };
 
+            const offPickupDescriptions = {
+                "어둠의 인도자 윤수오": "그는 심연속에 산다",
+                "포켓 윤수": "찾아라! 당신만의 카와이 윤수짱!",
+                "아케이드 윤수": "일상에 지친 그대에게 단비같음을 선사해줍니다",
+                "프로젝트:윤수": "아무도 믿지마.",
+                "할로우 나이트 윤수": "미지의 땅에서 진실을 찾으라",
+                "대윤수": "커다랗습니다",
+                "K/DA 윤수": "당신만의 POP STAR 윤수를 감당할수있겠어요?",
+                "HEARTSTEEL 윤수": "당신의 마음을 훔칠 Kpop demon"
+            };
+
             const get5StarProbability = (count) => {
                 if (count >= 90) return 100.0;
                 if (count >= 74) {
@@ -135,58 +168,14 @@
             };
 
             const calculateProbabilities = () => {
-                const current5StarProb = get5StarProbability(drawCount + 1);
+                const current5StarProb = get5StarProbability(pityCount + 1);
                 itemPool['5성'].probability = current5StarProb;
                 itemPool['4성'].probability = 15.0;
                 itemPool['3성'].probability = 100.0 - itemPool['5성'].probability - itemPool['4성'].probability;
             };
-
-            const drawGacha = () => {
-                drawCount++;
-                consecutivePulls++;
-                countDisplay.textContent = drawCount;
-                calculateProbabilities();
-                probabilityDisplay.textContent = `${itemPool['5성'].probability.toFixed(2)}%`;
-
-                const rand = Math.random() * 100;
-                let cumulativeProb = 0;
-                let drawnItem = null;
-
-                const tiers = ['5성', '4성', '3성'];
-                for (const tier of tiers) {
-                    cumulativeProb += itemPool[tier].probability;
-                    if (rand < cumulativeProb) {
-                        drawnItem = tier;
-                        break;
-                    }
-                }
-                
-                let itemName = '';
-                if (drawnItem === '5성') {
-                    const isPickup = guaranteedPickup || (Math.random() < 0.5);
-                    const pickupType = isPickup ? '5성 픽업' : '5성 픽뚫';
-                    const list = itemNames[pickupType];
-                    itemName = list[Math.floor(Math.random() * list.length)];
-                    if (!isPickup) {
-                       guaranteedPickup = true;
-                    } else {
-                       guaranteedPickup = false;
-                    }
-                    return { type: pickupType, name: itemName };
-                } else if (drawnItem === '4성') {
-                    const list = itemNames['4성'];
-                    itemName = list[Math.floor(Math.random() * list.length)];
-                    return { type: '4성', name: itemName };
-                } else {
-                    const list = itemNames['3성'];
-                    itemName = list[Math.floor(Math.random() * list.length)];
-                    return { type: '3성', name: itemName };
-                }
-            };
             
             const drawTenGacha = () => {
                 resultContainer.innerHTML = '';
-                logList.innerHTML = '';
                 const results = [];
                 let hasFourStar = false;
                 let fiveStarCount = 0;
@@ -230,7 +219,9 @@
 
             const drawSingleItem = () => {
                 drawCount++;
-                countDisplay.textContent = drawCount;
+                pityCount++;
+                drawCountDisplay.textContent = drawCount;
+                pityCountDisplay.textContent = pityCount;
                 calculateProbabilities();
                 probabilityDisplay.textContent = `${itemPool['5성'].probability.toFixed(2)}%`;
 
@@ -258,6 +249,8 @@
                     } else {
                        guaranteedPickup = false;
                     }
+                    // 5성 등장 시 5성 뽑기 횟수 초기화
+                    pityCount = 0;
                     return { type: pickupType, name: itemName };
                 } else if (drawnItem === '4성') {
                     const list = itemNames['4성'];
@@ -279,7 +272,13 @@
                     itemKey === '5성' ? 'star-5' :
                     itemKey === '4성' ? 'star-4' : 'star-3'
                 }`;
+                let imageHtml = '';
+                if (itemName === '신 윤 수(GOD YOON-SU)') {
+                    imageHtml = `<img src="https://placehold.co/100x100/333333/FFFFFF?text=GOD+YOON-SU" alt="신 윤 수(GOD YOON-SU)" class="item-image">`;
+                }
+
                 itemDiv.innerHTML = `
+                    ${imageHtml}
                     <p class="text-3xl font-bold mb-2">${itemKey.replace('성 픽업', '성').replace('성 픽뚫', '성')}</p>
                     <p class="text-md text-center">${itemName}</p>
                 `;
@@ -299,6 +298,14 @@
                     offPickupBadge.className = 'pickup-text bg-purple-600';
                     offPickupBadge.textContent = '픽뚫 아이템';
                     itemDiv.appendChild(offPickupBadge);
+
+                    const description = offPickupDescriptions[itemName];
+                    if (description) {
+                         const descElem = document.createElement('p');
+                         descElem.className = 'text-sm text-purple-200 mt-2 text-center';
+                         descElem.textContent = description;
+                         itemDiv.appendChild(descElem);
+                    }
                 }
                 resultContainer.appendChild(itemDiv);
             };
@@ -313,7 +320,13 @@
                         result.type === '5성' ? 'star-5' :
                         result.type === '4성' ? 'star-4' : 'star-3'
                     }`;
+                    let imageHtml = '';
+                    if (result.name === '신 윤 수(GOD YOON-SU)') {
+                        imageHtml = `<img src="https://placehold.co/100x100/333333/FFFFFF?text=GOD+YOON-SU" alt="신 윤 수(GOD YOON-SU)" class="item-image">`;
+                    }
+                    
                     itemDiv.innerHTML = `
+                        ${imageHtml}
                         <p class="text-xl font-bold mb-1">${result.type.replace('성 픽업', '성').replace('성 픽뚫', '성')}</p>
                         <p class="text-sm text-center">${result.name}</p>
                     `;
@@ -333,6 +346,14 @@
                         offPickupBadge.className = 'pickup-text bg-purple-600';
                         offPickupBadge.textContent = '픽뚫';
                         itemDiv.appendChild(offPickupBadge);
+
+                        const description = offPickupDescriptions[result.name];
+                        if (description) {
+                            const descElem = document.createElement('p');
+                            descElem.className = 'text-xs text-purple-200 mt-1 text-center';
+                            descElem.textContent = description;
+                            itemDiv.appendChild(descElem);
+                        }
                     }
                     resultContainer.appendChild(itemDiv);
                     addLog(result.type, result.name);
