@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>공간 동선 최적화 시뮬레이터</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://css.gg/icons/css/info.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', 'Noto Sans KR', sans-serif; }
+        .layout-btn.active {
+            background-color: #0e7490; /* cyan-700 */
+            color: white;
+            box-shadow: 0 0 15px rgba(14, 165, 233, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200 flex flex-col items-center p-4">
+
+    <div class="w-full max-w-7xl mx-auto">
+        <!-- ================== 시뮬레이터 섹션 ================== -->
+        <div class="bg-gray-800 rounded-2xl shadow-2xl p-6 md:p-8">
+            <header class="text-center mb-6">
+                <h1 class="text-3xl md:text-4xl font-bold text-cyan-400">공간 동선 최적화 시뮬레이터</h1>
+                <p class="text-gray-400 mt-2">알고리즘 효율성이 복잡한 건축 공간의 '경험'과 '쾌적함'을 어떻게 결정하는지 확인합니다.</p>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                <div class="lg:col-span-2 bg-gray-700/50 rounded-xl p-6 flex flex-col space-y-4">
+                    <div class="space-y-4 text-sm flex-grow">
+                        <div>
+                            <h3 class="font-semibold text-lg text-white mb-2">1. 시뮬레이션 목표</h3>
+                            <p class="text-gray-300">
+                               다양한 건축 구조 속에서 관람객의 동선을 제어하여, 병목 현상 없이 쾌적한 흐름을 만드는 문제입니다. 알고리즘의 효율성이 어떻게 건물의 기능성을 좌우하는지 확인해보세요.
+                            </p>
+                        </div>
+                         <div class="bg-yellow-800/50 p-3 rounded-lg text-yellow-200 text-xs flex items-center gap-2">
+                            <i class="gg-info"></i>
+                            <span>이제 비효율적인 알고리즘은 계산량이 많아지면 **움직임이 느려집니다!**</span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-lg text-red-400 mb-2">2. 비효율적 알고리즘: O(n²)</h3>
+                            <p class="text-gray-300">
+                               **"모든 사람은 다른 모든 사람을 일일이 확인하라!"**<br>
+                               사람이 많아지면 '생각하는 시간'이 길어져 움직임이 버벅거립니다. 심한 경우 멈춰버리며, 이는 실제 공간에서의 극심한 혼잡과 정체를 의미합니다.
+                            </p>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-lg text-green-400 mb-2">3. 최적화 알고리즘: O(n log n)</h3>
+                            <p class="text-gray-300">
+                               **"네 주변의 가까운 사람만 신경 써라!"**<br>
+                               '공간 분할' 기술로 '생각하는 시간'이 거의 늘지 않아, 관람객이 많아져도 쾌적한 속도를 유지하며 움직일 수 있습니다.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-gray-600 space-y-4">
+                         <div>
+                             <label class="block text-sm font-medium text-gray-300 mb-2">건물 구조 선택</label>
+                             <div id="layout-buttons" class="grid grid-cols-3 gap-2">
+                                 <button data-index="0" class="layout-btn bg-gray-600 hover:bg-gray-500 text-white font-semibold py-2 px-3 rounded-lg transition-all text-xs active">S자 복도</button>
+                                 <button data-index="1" class="layout-btn bg-gray-600 hover:bg-gray-500 text-white font-semibold py-2 px-3 rounded-lg transition-all text-xs">미로</button>
+                                 <button data-index="2" class="layout-btn bg-gray-600 hover:bg-gray-500 text-white font-semibold py-2 px-3 rounded-lg transition-all text-xs">중앙 홀</button>
+                             </div>
+                         </div>
+                        <div>
+                             <label class="block text-sm font-medium text-gray-300 mb-2">관람객 수 (n): <span id="agentCountValue" class="font-bold text-cyan-400">100</span>명</label>
+                             <input id="agentCount" type="range" min="10" max="300" value="100" step="10" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-cyan-500">
+                        </div>
+                        <div class="grid grid-cols-1 gap-4">
+                             <button id="startBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-lg">
+                                시뮬레이션 시작
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-3 flex flex-col space-y-4">
+                    <div class="bg-gray-900 rounded-xl p-2 aspect-video flex items-center justify-center relative">
+                        <canvas id="visualCanvas" class="w-full h-full rounded-lg"></canvas>
+                        <div id="entranceLabel" class="absolute bottom-2 left-4 text-white font-bold text-lg bg-black/50 px-2 py-1 rounded">ENTRANCE</div>
+                        <div id="exitLabel" class="absolute top-2 right-4 text-white font-bold text-lg bg-black/50 px-2 py-1 rounded">EXIT</div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-center">
+                        <div class="info-box bg-gray-800 p-4 rounded-lg">
+                            <h3 class="text-sm font-semibold text-red-400">O(n²) 성능</h3>
+                            <p class="text-lg font-bold">속도: <span id="inefficientSpeed">100</span>%</p>
+                            <p class="text-xs text-gray-400">충돌 횟수: <span id="inefficientCollisions">0</span></p>
+                        </div>
+                        <div class="info-box bg-gray-800 p-4 rounded-lg">
+                            <h3 class="text-sm font-semibold text-green-400">O(n log n) 성능</h3>
+                            <p class="text-lg font-bold">속도: <span id="efficientSpeed">100</span>%</p>
+                            <p class="text-xs text-gray-400">충돌 횟수: <span id="efficientCollisions">0</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ================== 기대 효과 및 건축적 활용 방안 섹션 ================== -->
+        <div class="bg-gray-800 rounded-2xl shadow-2xl p-6 md:p-8 mt-8">
+            <h2 class="text-2xl md:text-3xl font-bold text-cyan-400 text-center mb-6">연구의 궁극적 목표: 예측 가능한 '경험'의 설계</h2>
+            <p class="text-center text-gray-300 max-w-3xl mx-auto mb-8">
+                이 시뮬레이션 연구의 최종 목표는 컴퓨터 화면 속 점들의 움직임을 넘어, **데이터를 기반으로 사람들의 공간 경험을 미리 예측하고 최적화하는 것**입니다. 건축가는 설계 단계에서부터 가상 공간에 수천 명의 사람들을 '초대'하여 동선의 문제점, 공간의 밀도 변화, 잠재적 위험을 사전에 파악하고, 모든 방문객이 **의도된 대로 쾌적하고 안전하게 공간을 경험하도록** 설계를 구체적으로 다듬을 수 있습니다.
+            </p>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left text-gray-300">
+                    <thead class="text-xs text-cyan-300 uppercase bg-gray-700">
+                        <tr>
+                            <th scope="col" class="px-6 py-3">적용 분야</th>
+                            <th scope="col" class="px-6 py-3">건축적 문제 상황</th>
+                            <th scope="col" class="px-6 py-3">시뮬레이션을 통한 해결 방안</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="bg-gray-800 border-b border-gray-700">
+                            <td class="px-6 py-4 font-bold text-white">1. 동선 최적화</td>
+                            <td class="px-6 py-4">"특정 지점에만 사람이 몰려 관람이 힘들다."<br>"복도가 좁아 지나가기 불편하다."</td>
+                            <td class="px-6 py-4">
+                                **가변형 격벽(Partition) 설치:** 가장 혼잡한 지점을 찾아내 임시 격벽으로 동선을 분산시키는 효과를 미리 검증합니다.<br>
+                                **시설 재배치:** 인기 작품을 넓은 곳으로, 카페/상점을 출구 동선 근처에 배치하여 밀도를 조절하는 전략의 효과를 데이터로 확인합니다.
+                            </td>
+                        </tr>
+                        <tr class="bg-gray-800 border-b border-gray-700">
+                            <td class="px-6 py-4 font-bold text-white">2. 안전 설계</td>
+                            <td class="px-6 py-4">"화재 시 모든 인원이 안전하게 대피할 수 있을까?"<br>"비상구의 위치와 크기는 적절한가?"</td>
+                            <td class="px-6 py-4">
+                                **피난 시뮬레이션:** 대규모 인원이 동시에 비상구로 몰리는 상황을 시뮬레이션하여 병목 현상이 발생하는 위험 지점을 식별합니다.<br>
+                                **최적 대피 경로 설계:** 분석 데이터를 바탕으로 비상구 위치나 복도 폭을 조정하여 '골든타임'을 단축시키는 설계를 완성합니다.
+                            </td>
+                        </tr>
+                        <tr class="bg-gray-800">
+                            <td class="px-6 py-4 font-bold text-white">3. 상업 효율 극대화</td>
+                            <td class="px-6 py-4">"백화점에서 고객들이 특정 매장은 그냥 지나친다."<br>"어디에 주력 상품을 배치해야 효과적일까?"</td>
+                            <td class="px-6 py-4">
+                                **고객 동선 분석:** 대부분의 고객이 지나가는 '황금 동선'과 오래 머무는 '체류 공간'을 파악합니다.<br>
+                                **전략적 공간 기획(MD):** '황금 동선'에 주력 매장을, '체류 공간'에 휴게 시설을 배치하여 고객 만족도와 매출을 동시에 높이는 설계를 합니다.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+             <p class="text-xs text-gray-400 mt-6 text-center max-w-3xl mx-auto">
+                <strong>알고리즘과 실제 인간 행동의 연결점:</strong> 이 시뮬레이션은 개별 관람객의 '심리'가 아닌, **"목표 지점으로 이동하며 다른 사람과 부딪히지 않으려는"** 보편적인 물리적 규칙이 집단적 현상(혼잡, 흐름)을 어떻게 만들어 내는지를 보여줍니다. 건축가는 이 통찰력을 바탕으로, 실제 인간이 더 쾌적하고 안전하게 행동하도록 유도하는 더 나은 물리적 환경(건축 공간)을 창조할 수 있습니다.
+            </p>
+
+            <div class="mt-6 pt-6 border-t border-gray-700">
+                <h4 class="text-xl font-bold text-cyan-400 text-center mb-4">더 넓은 관점: 인간, 건축, 그리고 도시 교통체증</h4>
+                <div class="text-gray-300 space-y-3 text-sm max-w-3xl mx-auto">
+                    <p>
+                        이 시뮬레이션의 원리는 비단 건축물 내부에만 국한되지 않습니다. 관람객을 '자동차'로, 건물의 벽과 통로를 '도시의 도로망'으로 치환하면, 이는 곧 **도시 교통체증 문제**와 직결됩니다.
+                    </p>
+                    <p>
+                        <strong class="text-red-400">비효율적인 알고리즘(O(n²))</strong>은 마치 복잡한 교차로에서 도로 위의 모든 차량 위치를 한 번에 파악하려는 초보 운전자와 같습니다. 정보 과부하로 제때 판단을 내리지 못하고 멈칫거리게 되며, 이 사소한 '버벅임'이 연쇄적으로 뒷차에 영향을 미쳐 결국 거대한 '유령 정체'를 유발합니다. 시뮬레이션에서 빨간 공들이 버벅이는 현상이 바로 이것입니다.
+                    </p>
+                    <p>
+                        반면, <strong class="text-green-400">최적화된 알고리즘(O(n log n))</strong>은 자신의 주변 차량 흐름만 보고 즉각적으로 판단하는 숙련된 운전자와 같습니다. 꼭 필요한 정보만으로 빠른 결정을 내리기에, 전체적인 흐름이 막힘없이 부드럽게 이어집니다.
+                    </p>
+                    <p>
+                        여기서 **효과적인 동선 설계(건축/도시 계획)**의 역할이 드러납니다. 잘 설계된 도로는 운전자가 많은 정보를 한 번에 처리할 필요가 없도록 길을 안내하며 자연스럽게 차량을 분산시킵니다. 넓은 간선도로, 명확한 일방통행, 직관적인 로터리(회전교차로) 등은 **초보 운전자마저도 큰 스트레스 없이 편안하게 운전할 수 있는 환경**을 만듭니다. 이는 복잡한 교차점의 상충을 줄이는 시뮬레이션의 '벽'과 '통로'를 설계하는 것과 같습니다.
+                    </p>
+                    <p class="font-semibold text-cyan-300">
+                        결론적으로, 이 시뮬레이션은 쾌적한 도시 환경을 만들기 위해서는 지능적인 '소프트웨어(알고리즘)'와 효율적인 '하드웨어(도로망, 건축 설계)'가 반드시 함께 가야 함을 보여주는 축소판이라 할 수 있습니다.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const canvas = document.getElementById('visualCanvas');
+        const ctx = canvas.getContext('2d');
+        const agentCountSlider = document.getElementById('agentCount');
+        const agentCountValue = document.getElementById('agentCountValue');
+        const startBtn = document.getElementById('startBtn');
+        const layoutButtonsContainer = document.getElementById('layout-buttons');
+        const inefficientSpeedEl = document.getElementById('inefficientSpeed');
+        const inefficientCollisionsEl = document.getElementById('inefficientCollisions');
+        const efficientSpeedEl = document.getElementById('efficientSpeed');
+        const efficientCollisionsEl = document.getElementById('efficientCollisions');
+
+        // --- Simulation State ---
+        let agents = [];
+        let canvasWidth, canvasHeight;
+        let animationFrameId;
+        let collisionCounts = { inefficient: 0, efficient: 0 };
+        let hoveredAgent = null;
+        let mousePos = { x: -100, y: -100 };
+        let currentLayoutIndex = 0;
+        let flowField = null;
+        let startPoint, endPoint;
+
+        const walls = [];
+        const PREDEFINED_LAYOUTS = [];
+
+        // --- Agent & Grid Classes ---
+        class Agent {
+            constructor(onExit) {
+                this.onExit = onExit;
+                this.reset();
+            }
+            reset() {
+                this.x = startPoint.x + (Math.random() - 0.5) * 50;
+                this.y = startPoint.y + (Math.random() - 0.5) * 50;
+                this.vx = (Math.random() - 0.5); this.vy = (Math.random() - 0.5);
+                this.radius = 4;
+                this.maxSpeed = 1.5;
+                this.colliding = false;
+            }
+        }
+
+        class SpatialGrid {
+             constructor(width, height, cellSize) {
+                this.cellSize = cellSize;
+                this.cols = Math.ceil(width / cellSize);
+                this.rows = Math.ceil(height / cellSize);
+                this.grid = new Array(this.cols * this.rows).fill(0).map(() => []);
+            }
+            clear() { this.grid.forEach(cell => cell.length = 0); }
+            insert(agent) {
+                const col = Math.floor(agent.x / this.cellSize);
+                const row = Math.floor(agent.y / this.cellSize);
+                if (col >= 0 && col < this.cols && row >= 0 && row < this.rows) {
+                    this.grid[row * this.cols + col].push(agent);
+                }
+            }
+            getNearby(agent) {
+                const nearbyAgents = [];
+                const col = Math.floor(agent.x / this.cellSize);
+                const row = Math.floor(agent.y / this.cellSize);
+                for (let i = -1; i <= 1; i++) {
+                    for (let j = -1; j <= 1; j++) {
+                        const newRow = row + i;
+                        const newCol = col + j;
+                        if (newRow >= 0 && newRow < this.rows && newCol >= 0 && newCol < this.cols) {
+                            nearbyAgents.push(...this.grid[newRow * this.cols + newCol]);
+                        }
+                    }
+                }
+                return nearbyAgents;
+            }
+        }
+
+        let grid;
+
+        // --- Layout & Pathfinding ---
+        function definePresetLayouts(w, h) {
+            PREDEFINED_LAYOUTS.length = 0; // Clear before defining
+            // Layout 0: S-Curve
+            PREDEFINED_LAYOUTS.push({
+                name: 'S자 복도',
+                start: { x: w * 0.1, y: h * 0.9 }, end: { x: w * 0.9, y: h * 0.1 },
+                walls: [ {x1: 0, y1: h*0.6, x2: w*0.7, y2: h*0.6}, {x1: w*0.3, y1: h*0.4, x2: w, y2: h*0.4} ]
+            });
+            // Layout 1: Maze-like
+             PREDEFINED_LAYOUTS.push({
+                name: '미로',
+                start: { x: 30, y: h-30 }, end: { x: w-30, y: 30 },
+                walls: [ {x1: w*0.25, y1: 0, x2: w*0.25, y2: h*0.7}, {x1: w*0.5, y1: h, x2: w*0.5, y2: h*0.3}, {x1: w*0.75, y1: 0, x2: w*0.75, y2: h*0.7} ]
+            });
+            // Layout 2: Central Room with Doors
+            PREDEFINED_LAYOUTS.push({
+                name: '중앙 홀과 두 갈래 길',
+                start: { x: w * 0.1, y: h * 0.9 }, end: { x: w * 0.9, y: h * 0.1 },
+                walls: [ {x1:w*0.3,y1:h*0.3, x2:w*0.7, y2:h*0.3},{x1:w*0.7,y1:h*0.3, x2:w*0.7, y2:h*0.7},{x1:w*0.7,y1:h*0.7, x2:w*0.3, y2:h*0.7},{x1:w*0.3,y1:h*0.7, x2:w*0.3, y2:h*0.4, door:true} ]
+            });
+        }
+        
+        function generateLayout(index) {
+            walls.length = 0;
+            const w = canvasWidth, h = canvasHeight;
+            
+            // Add outer boundary walls
+            walls.push({x1:0, y1:0, x2:w, y2:0}); 
+            walls.push({x1:w, y1:0, x2:w, y2:h});
+            walls.push({x1:w, y1:h, x2:0, y2:h}); 
+            walls.push({x1:0, y1:h, x2:0, y2:0});
+
+            if (index >= 0 && index < PREDEFINED_LAYOUTS.length) {
+                const layout = PREDEFINED_LAYOUTS[index];
+                startPoint = layout.start;
+                endPoint = layout.end;
+                
+                layout.walls.forEach(wall => {
+                    if (wall.door) {
+                        const dx = wall.x2 - wall.x1;
+                        const dy = wall.y2 - wall.y1;
+                        const len = Math.sqrt(dx*dx + dy*dy);
+                        const doorSize = 40;
+                        const midX = wall.x1 + dx/2;
+                        const midY = wall.y1 + dy/2;
+                        
+                        if (len > doorSize) {
+                            const p1 = {x: midX - (dx/len)*doorSize/2, y: midY - (dy/len)*doorSize/2};
+                            const p2 = {x: midX + (dx/len)*doorSize/2, y: midY + (dy/len)*doorSize/2};
+                            walls.push({x1:wall.x1, y1:wall.y1, x2:p1.x, y2:p1.y});
+                            walls.push({x1:p2.x, y1:p2.y, x2:wall.x2, y2:wall.y2});
+                        } else {
+                             walls.push({ ...wall });
+                        }
+                    } else {
+                        walls.push({ ...wall });
+                    }
+                })
+            }
+
+            calculateFlowField();
+        }
+
+        function isObstacle(cx, cy, tileSize) {
+            for (const wall of walls) {
+                let x1 = wall.x1, y1 = wall.y1, x2 = wall.x2, y2 = wall.y2;
+                let left = Math.min(x1, x2) - tileSize, right = Math.max(x1, x2) + tileSize;
+                let top = Math.min(y1, y2) - tileSize, bottom = Math.max(y1, y2) + tileSize;
+                if (cx < left || cx > right || cy < top || cy > bottom) continue;
+                const dx = x2 - x1, dy = y2 - y1;
+                if (dx === 0 && dy === 0) continue;
+                const t = ((cx - x1) * dx + (cy - y1) * dy) / (dx*dx + dy*dy);
+                const clampedT = Math.max(0, Math.min(1, t));
+                const nearestX = x1 + clampedT * dx;
+                const nearestY = y1 + clampedT * dy;
+                const distSq = (cx - nearestX)**2 + (cy - nearestY)**2;
+                if (distSq < (tileSize/2)**2) return true;
+            }
+            return false;
+        }
+
+        function calculateFlowField() {
+            const TILE_SIZE = 15;
+            const cols = Math.floor(canvasWidth / TILE_SIZE);
+            const rows = Math.floor(canvasHeight / TILE_SIZE);
+            const integrationField = Array(cols).fill(0).map(() => Array(rows).fill(Infinity));
+            const endCol = Math.max(0, Math.min(cols-1, Math.floor(endPoint.x / TILE_SIZE)));
+            const endRow = Math.max(0, Math.min(rows-1, Math.floor(endPoint.y / TILE_SIZE)));
+            
+            const queue = [{c: endCol, r: endRow, dist: 0}];
+            if(integrationField[endCol] && integrationField[endCol][endRow] !== undefined) integrationField[endCol][endRow] = 0;
+            
+            let head = 0;
+            while(head < queue.length) {
+                const {c, r, dist} = queue[head++];
+                const neighbors = [[-1,0],[1,0],[0,-1],[0,1]];
+                for (const [dc, dr] of neighbors) {
+                    const nc = c + dc, nr = r + dr;
+                    if(nc >= 0 && nc < cols && nr >= 0 && nr < rows && integrationField[nc][nr] === Infinity && !isObstacle(nc * TILE_SIZE + TILE_SIZE/2, nr * TILE_SIZE + TILE_SIZE/2, TILE_SIZE)){
+                        integrationField[nc][nr] = dist + 1;
+                        queue.push({c: nc, r: nr, dist: dist + 1});
+                    }
+                }
+            }
+
+            flowField = Array(cols).fill(0).map(() => Array(rows).fill({x:0, y:0}));
+             for (let c = 0; c < cols; c++) {
+                for (let r = 0; r < rows; r++) {
+                    if (integrationField[c][r] === Infinity) continue;
+                    let best_d = integrationField[c][r];
+                    let best_v = {x:0, y:0};
+                    const neighbors = [[0,0],[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]];
+                    for (const [dc, dr] of neighbors) {
+                         const nc = c + dc, nr = r + dr;
+                         if(nc >= 0 && nc < cols && nr >= 0 && nr < rows && integrationField[nc][nr] < best_d){
+                             best_d = integrationField[nc][nr];
+                             best_v = {x: dc, y: dr};
+                         }
+                    }
+                    flowField[c][r] = best_v;
+                }
+            }
+        }
+        
+        function updateAgents(agents, method, computationTime) {
+            const separationDist = 20;
+            const MAX_CHECKS = 50; 
+            let collisionCount = 0;
+            const TILE_SIZE = 15;
+            const TIME_BUDGET = 8; // ms
+            const speedFactor = Math.min(1.0, TIME_BUDGET / Math.max(1, computationTime));
+
+
+            agents.forEach(agent => {
+                agent.colliding = false;
+                const col = Math.max(0, Math.min(flowField.length - 1, Math.floor(agent.x / TILE_SIZE)));
+                const row = Math.max(0, Math.min(flowField[0].length - 1, Math.floor(agent.y / TILE_SIZE)));
+                let steer = {x:0, y:0};
+                if(flowField && flowField[col] && flowField[col][row]){
+                    steer.x = flowField[col][row].x; 
+                    steer.y = flowField[col][row].y; 
+                }
+                const distToEnd = Math.sqrt(Math.pow(agent.x-endPoint.x, 2) + Math.pow(agent.y-endPoint.y, 2));
+                if (distToEnd < 25) { agent.onExit(agent); }
+
+                let wallAvoidance = {x: 0, y: 0};
+                if(isObstacle(agent.x, agent.y, agent.radius * 2)) {
+                    let closestWallPoint = {x:0, y:0, dist: Infinity};
+                    for(const wall of walls) {
+                         const dx = wall.x2 - wall.x1;
+                         const dy = wall.y2 - wall.y1;
+                         if (dx === 0 && dy === 0) continue;
+                         const t = ((agent.x - wall.x1) * dx + (agent.y - wall.y1) * dy) / (dx*dx + dy*dy);
+                         const clampedT = Math.max(0, Math.min(1, t));
+                         const nearestX = wall.x1 + clampedT * dx;
+                         const nearestY = wall.y1 + clampedT * dy;
+                         const distSq = (agent.x - nearestX)**2 + (agent.y - nearestY)**2;
+                         if (distSq < closestWallPoint.dist) {
+                             closestWallPoint = {x: nearestX, y: nearestY, dist: distSq};
+                         }
+                    }
+                    let repel = { x: agent.x - closestWallPoint.x, y: agent.y - closestWallPoint.y };
+                    const d = Math.sqrt(repel.x**2 + repel.y**2);
+                    if (d > 0) {
+                        wallAvoidance.x = repel.x / d;
+                        wallAvoidance.y = repel.y / d;
+                    }
+                }
+
+                let separation = { x: 0, y: 0 };
+                const neighbors = (method === 'grid') ? grid.getNearby(agent) : agents;
+                let checks = 0;
+                for (const other of neighbors) {
+                    if (agent === other) continue;
+                    if (method === 'brute' && checks++ > MAX_CHECKS) break; 
+                    const d = Math.sqrt(Math.pow(agent.x - other.x, 2) + Math.pow(agent.y - other.y, 2));
+                    if (d > 0 && d < separationDist) {
+                        let diff = { x: agent.x - other.x, y: agent.y - other.y };
+                        diff.x /= d; diff.y /= d;
+                        separation.x += diff.x; separation.y += diff.y;
+                        if (d < agent.radius * 2) {
+                            agent.colliding = true;
+                            collisionCount++;
+                        }
+                    }
+                }
+                
+                agent.vx += steer.x * 0.2 + separation.x * 0.5 + wallAvoidance.x * 0.8;
+                agent.vy += steer.y * 0.2 + separation.y * 0.5 + wallAvoidance.y * 0.8;
+                const speed = Math.sqrt(agent.vx * agent.vx + agent.vy * agent.vy);
+                if (speed > agent.maxSpeed) {
+                    agent.vx = (agent.vx / speed) * agent.maxSpeed;
+                    agent.vy = (agent.vy / speed) * agent.maxSpeed;
+                }
+                agent.x += agent.vx * speedFactor; 
+                agent.y += agent.vy * speedFactor;
+
+                agent.x = Math.max(agent.radius, Math.min(canvasWidth - agent.radius, agent.x));
+                agent.y = Math.max(agent.radius, Math.min(canvasHeight - agent.radius, agent.y));
+            });
+            return collisionCount / 2;
+        }
+
+        function drawLayout() {
+            ctx.strokeStyle = '#0891b2';
+            ctx.lineWidth = 3;
+            walls.forEach(wall => {
+                ctx.beginPath();
+                ctx.moveTo(wall.x1, wall.y1);
+                ctx.lineTo(wall.x2, wall.y2);
+                ctx.stroke();
+            });
+        }
+        
+        function drawAgents(agents) {
+             agents.forEach(agent => {
+                if (agent.colliding) ctx.fillStyle = '#facc15';
+                else ctx.fillStyle = agent.isInefficient ? '#ef4444' : '#22c55e';
+                ctx.beginPath();
+                ctx.arc(agent.x, agent.y, agent.radius, 0, 2 * Math.PI);
+                ctx.fill();
+             });
+        }
+        
+        function drawHoverInfo() {
+            if (!hoveredAgent) return;
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
+            ctx.lineWidth = 1;
+            if (hoveredAgent.isInefficient) {
+                const inefficientAgents = agents.filter(a => a.isInefficient);
+                inefficientAgents.forEach(other => {
+                    if (hoveredAgent !== other) {
+                        ctx.beginPath();
+                        ctx.moveTo(hoveredAgent.x, hoveredAgent.y);
+                        ctx.lineTo(other.x, other.y);
+                        ctx.stroke();
+                    }
+                });
+            } else {
+                const nearby = grid.getNearby(hoveredAgent);
+                nearby.forEach(other => {
+                    if (hoveredAgent !== other) {
+                         ctx.beginPath();
+                        ctx.moveTo(hoveredAgent.x, hoveredAgent.y);
+                        ctx.lineTo(other.x, other.y);
+                        ctx.stroke();
+                    }
+                });
+            }
+        }
+
+        function animate(timestamp) {
+            if (!animationFrameId) return;
+            
+            const agentsInefficient = agents.filter(a => a.isInefficient);
+            const agentsEfficient = agents.filter(a => !a.isInefficient);
+
+            const s1 = performance.now();
+            updateAgents(agentsInefficient, 'brute', 0);
+            const t1 = performance.now() - s1;
+            collisionCounts.inefficient = updateAgents(agentsInefficient, 'brute', t1);
+
+
+            const s2 = performance.now();
+            grid.clear();
+            agentsEfficient.forEach(a => grid.insert(a));
+            updateAgents(agentsEfficient, 'grid', 0);
+            const t2 = performance.now() - s2;
+            
+            collisionCounts.efficient = updateAgents(agentsEfficient, 'grid', t2);
+
+
+            ctx.fillStyle = '#111827';
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+            drawLayout();
+            drawAgents(agents);
+            drawHoverInfo();
+
+            const TIME_BUDGET = 8;
+            inefficientSpeedEl.textContent = Math.round(Math.min(1.0, TIME_BUDGET / Math.max(1,t1)) * 100);
+            inefficientCollisionsEl.textContent = Math.round(collisionCounts.inefficient);
+            efficientSpeedEl.textContent = Math.round(Math.min(1.0, TIME_BUDGET / Math.max(1,t2)) * 100);
+            efficientCollisionsEl.textContent = Math.round(collisionCounts.efficient);
+            
+            animationFrameId = requestAnimationFrame(animate);
+        }
+
+        function startSimulation() {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+            
+            const n = parseInt(agentCountSlider.value);
+            agents = [];
+            const onExit = (agent) => { agent.reset(); };
+
+            for (let i = 0; i < n; i++) {
+                const agent = new Agent(onExit);
+                agent.isInefficient = i < n/2;
+                agents.push(agent);
+            }
+            lastTimestamp = 0;
+            animationFrameId = requestAnimationFrame(animate);
+        }
+
+        function setupEventListeners() {
+            agentCountSlider.addEventListener('input', e => {
+                agentCountValue.textContent = e.target.value;
+            });
+
+            startBtn.addEventListener('click', startSimulation);
+            
+            layoutButtonsContainer.addEventListener('click', (e) => {
+                if(e.target.tagName === 'BUTTON') {
+                    currentLayoutIndex = parseInt(e.target.dataset.index);
+                    document.querySelectorAll('.layout-btn').forEach(btn => btn.classList.remove('active'));
+                    e.target.classList.add('active');
+                    
+                    if (animationFrameId) {
+                        cancelAnimationFrame(animationFrameId);
+                        animationFrameId = null;
+                    }
+                    agents = [];
+                    generateLayout(currentLayoutIndex);
+                    drawLayout();
+                }
+            });
+
+            canvas.addEventListener('mousemove', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                mousePos.x = e.clientX - rect.left;
+                mousePos.y = e.clientY - rect.top;
+                hoveredAgent = null;
+                for(const agent of agents) {
+                    const dist = Math.sqrt(Math.pow(agent.x - mousePos.x, 2) + Math.pow(agent.y - mousePos.y, 2));
+                    if (dist < agent.radius * 2) {
+                        hoveredAgent = agent;
+                        break;
+                    }
+                }
+            });
+            window.addEventListener('resize', () => {
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                    animationFrameId = null;
+                }
+                setupCanvas();
+                definePresetLayouts(canvasWidth, canvasHeight);
+                generateLayout(currentLayoutIndex);
+                drawLayout();
+            });
+        }
+        
+        function setupCanvas() {
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            canvasWidth = rect.width;
+            canvasHeight = rect.height;
+            ctx.scale(dpr, dpr);
+        }
+
+        function init() {
+            setupCanvas();
+            definePresetLayouts(canvasWidth, canvasHeight);
+            setupEventListeners();
+            generateLayout(currentLayoutIndex);
+            drawLayout();
+            grid = new SpatialGrid(canvasWidth, canvasHeight, 30);
+        }
+
+        init();
+    </script>
+</body>
+</html>
+
