@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>여행 동선 최적화 도구</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .title-gradient {
+            background: linear-gradient(to right, #4f46e5, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        canvas {
+            cursor: crosshair;
+            touch-action: none; /* 모바일에서 줌 방지 */
+        }
+        /* 버튼 클릭 시 로딩 애니메이션을 위한 스타일 */
+        .is-loading {
+            position: relative;
+            color: transparent !important;
+            pointer-events: none;
+        }
+        .is-loading::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            margin: auto;
+            border: 3px solid transparent;
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            animation: button-loading-spinner 1s ease infinite;
+        }
+        @keyframes button-loading-spinner {
+            from {
+                transform: rotate(0turn);
+            }
+            to {
+                transform: rotate(1turn);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-5xl bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 sm:p-8 text-center">
+        <!-- 제목 및 설명 -->
+        <h1 class="text-3xl sm:text-4xl font-bold title-gradient mb-2">여행 동선 최적화</h1>
+        <p class="text-gray-600 dark:text-gray-300 mb-6">대한민국에서 출발합니다. 방문할 여행지를 지도에 클릭하여 추가하세요.</p>
+
+        <!-- 캔버스 (지도) -->
+        <div class="relative w-full aspect-video rounded-lg overflow-hidden border-2 border-indigo-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 shadow-inner">
+            <canvas id="mapCanvas" class="absolute top-0 left-0 w-full h-full"></canvas>
+        </div>
+
+        <!-- 컨트롤 버튼 -->
+        <div id="control-buttons" class="flex flex-wrap items-center justify-center gap-4 mt-6">
+            <button id="findTspBtn" class="flex-grow sm:flex-grow-0 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-800 shadow-lg">
+                최단 경로
+            </button>
+            <button id="findMstBtn" class="flex-grow sm:flex-grow-0 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-green-300 dark:focus:ring-green-800 shadow-lg">
+                최소 신장 트리
+            </button>
+            <button id="findDfsBtn" class="flex-grow sm:flex-grow-0 bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-sky-300 dark:focus:ring-sky-800 shadow-lg">
+                깊이 우선 탐색
+            </button>
+            <button id="clearBtn" class="flex-grow sm:flex-grow-0 bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-pink-300 dark:focus:ring-pink-800 shadow-lg">
+                초기화
+            </button>
+        </div>
+
+        <!-- 결과 표시 영역 -->
+        <div id="result" class="mt-6 text-left p-5 bg-gray-50 dark:bg-gray-700/50 rounded-lg min-h-[80px] transition-opacity duration-300 opacity-0">
+            <!-- 결과가 여기에 표시됩니다. -->
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('mapCanvas');
+        const ctx = canvas.getContext('2d');
+        const findTspBtn = document.getElementById('findTspBtn');
+        const findMstBtn = document.getElementById('findMstBtn');
+        const findDfsBtn = document.getElementById('findDfsBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const resultDiv = document.getElementById('result');
+        const controlButtons = document.getElementById('control-buttons');
+
+        let locations = [];
+        let isAnimating = false;
+        const pointRadius = 8;
+
+        const mapImage = new Image();
+        mapImage.src = 'https://upload.wikimedia.org/wikipedia/commons/c/cf/A_large_blank_world_map_with_oceans_marked_in_blue.PNG';
+        
+        // 대한민국 국기 아이콘 생성
+        const koreaFlagIcon = new Image();
+        const simpleFlagSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 20"><rect width="30" height="20" fill="white" stroke="gray" stroke-width="0.5"/><circle cx="15" cy="10" r="5" fill="#CD2E3A"/><path d="M15 5 A 5 5 0 0 1 15 15" fill="#0047A0"/></svg>`;
+        koreaFlagIcon.src = `data:image/svg+xml;base64,${btoa(simpleFlagSvg)}`;
+        const flagWidth = 24;
+        const flagHeight = 16;
+        
+        mapImage.onload = () => {
+            resizeCanvas(); 
+        };
+        mapImage.onerror = () => {
+            console.error("Map image could not be loaded.");
+            canvas.parentElement.style.backgroundColor = '#f3f4f6';
+            resizeCanvas();
+        }
+
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.offsetWidth;
+            canvas.height = container.offsetHeight;
+            
+            const koreaLocation = { x: canvas.width * 0.82, y: canvas.height * 0.35 };
+            
+            if (locations.length === 0) {
+                locations.push(koreaLocation);
+            } else {
+                locations[0] = koreaLocation;
+            }
+            
+            drawAll();
+        }
+
+        function drawAll() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (mapImage.complete && mapImage.naturalWidth > 0) {
+                ctx.drawImage(mapImage, 0, 0, canvas.width, canvas.height);
+            }
+            drawLocations();
+        }
+
+        function drawLocations() {
+            locations.forEach((loc, index) => {
+                if (index === 0) { // 대한민국
+                    const iconX = loc.x - flagWidth / 2;
+                    const iconY = loc.y - flagHeight / 2;
+                    ctx.drawImage(koreaFlagIcon, iconX, iconY, flagWidth, flagHeight);
+                    
+                    // 숫자 '1'은 아이콘 아래에 표시
+                    ctx.font = 'bold 15px Inter';
+                    ctx.fillStyle = '#333';
+                    ctx.strokeStyle = 'white';
+                    ctx.lineWidth = 3;
+                    ctx.textAlign = 'center';
+                    ctx.strokeText('1', loc.x, loc.y + flagHeight);
+                    ctx.fillText('1', loc.x, loc.y + flagHeight);
+                } else { // 다른 여행지들
+                    ctx.beginPath();
+                    ctx.arc(loc.x, loc.y, pointRadius, 0, Math.PI * 2);
+                    ctx.fillStyle = '#4f46e5';
+                    ctx.fill();
+                    ctx.strokeStyle = 'white';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                    ctx.closePath();
+                    
+                    ctx.font = 'bold 14px Inter';
+                    ctx.fillStyle = '#ffffff';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(index + 1, loc.x, loc.y);
+                }
+            });
+        }
+        
+        function getDistance(point1, point2) {
+            return Math.sqrt(Math.pow(point1.x - point2.x, 2) + Math.pow(point1.y - point2.y, 2));
+        }
+
+        function toggleButtons(enable) {
+            controlButtons.querySelectorAll('button').forEach(btn => btn.disabled = !enable);
+        }
+
+        function drawTspRoute(path, totalDistance) {
+            drawAll();
+            if (path.length < 2) return;
+            // 경로 선 그리기
+            ctx.beginPath();
+            ctx.moveTo(path[0].x, path[0].y);
+            for (let i = 1; i < path.length; i++) ctx.lineTo(path[i].x, path[i].y);
+            ctx.strokeStyle = '#ec4899';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([8, 8]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.closePath();
+            
+            // 방문한 지점들 스타일 변경 (대한민국 제외)
+            for(let i = 1; i < path.length - 1; i++){
+                const loc = path[i];
+                const originalIndex = locations.indexOf(loc) + 1;
+                ctx.beginPath();
+                ctx.arc(loc.x, loc.y, pointRadius, 0, Math.PI * 2);
+                ctx.fillStyle = '#ec4899';
+                ctx.fill();
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.closePath();
+                ctx.font = 'bold 14px Inter';
+                ctx.fillStyle = '#ffffff';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(originalIndex, loc.x, loc.y);
+            }
+            const pathOrder = path.map(p => locations.indexOf(p) + 1).join(' → ');
+            resultDiv.innerHTML = `<p class="text-lg font-semibold text-gray-800 dark:text-white">최단 경로 (왕복) 탐색 완료</p><p class="text-md text-gray-600 dark:text-gray-300 mt-1"><strong>경로 순서:</strong> ${pathOrder}</p><p class="text-md text-gray-600 dark:text-gray-300"><strong>총 이동 거리:</strong> ${totalDistance.toFixed(2)}</p>`;
+            resultDiv.classList.remove('opacity-0');
+        }
+
+        function displayMstResult(edges, totalWeight) {
+            drawAll();
+            // 트리 선 그리기
+            ctx.beginPath();
+            edges.forEach(edge => {
+                ctx.moveTo(edge.from.x, edge.from.y);
+                ctx.lineTo(edge.to.x, edge.to.y);
+            });
+            ctx.strokeStyle = '#22c55e';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            ctx.closePath();
+            // 연결된 지점들 스타일 변경 (대한민국 제외)
+            locations.slice(1).forEach(loc => {
+                const originalIndex = locations.indexOf(loc) + 1;
+                ctx.beginPath();
+                ctx.arc(loc.x, loc.y, pointRadius, 0, Math.PI * 2);
+                ctx.fillStyle = '#22c55e';
+                ctx.fill();
+                 ctx.strokeStyle = 'white';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.closePath();
+                ctx.font = 'bold 14px Inter';
+                ctx.fillStyle = '#ffffff';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(originalIndex, loc.x, loc.y);
+            });
+
+            const edgeList = edges.map(edge => {
+                const fromIndex = locations.indexOf(edge.from) + 1;
+                const toIndex = locations.indexOf(edge.to) + 1;
+                return `<li class="py-1">${fromIndex}번 ↔ ${toIndex}번 (거리: ${edge.distance.toFixed(0)})</li>`;
+            }).join('');
+            resultDiv.innerHTML = `<p class="text-lg font-semibold text-gray-800 dark:text-white">최소 신장 트리 (MST) 탐색 완료</p><p class="text-md text-gray-600 dark:text-gray-300"><strong>총 연결 비용:</strong> ${totalWeight.toFixed(2)}</p><p class="text-md text-gray-600 dark:text-gray-300 mt-2"><strong>상세 연결 경로:</strong></p><ul class="list-disc list-inside text-sm text-left w-fit mx-auto text-gray-600 dark:text-gray-400">${edgeList}</ul>`;
+            resultDiv.classList.remove('opacity-0');
+        }
+
+        function displayDfsResult(path) {
+            let totalDistance = 0;
+            for (let i = 0; i < path.length - 1; i++) totalDistance += getDistance(path[i], path[i+1]);
+            drawAll();
+            // 경로 선 그리기
+            ctx.beginPath();
+            ctx.moveTo(path[0].x, path[0].y);
+            for (let i = 1; i < path.length; i++) ctx.lineTo(path[i].x, path[i].y);
+            ctx.strokeStyle = '#0ea5e9';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            ctx.closePath();
+            // 방문한 지점들 스타일 변경 (대한민국 제외)
+            path.slice(1).forEach(loc => {
+                const originalIndex = locations.indexOf(loc) + 1;
+                ctx.beginPath();
+                ctx.arc(loc.x, loc.y, pointRadius, 0, Math.PI * 2);
+                ctx.fillStyle = '#0ea5e9';
+                ctx.fill();
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.closePath();
+                ctx.font = 'bold 14px Inter';
+                ctx.fillStyle = '#ffffff';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(originalIndex, loc.x, loc.y);
+            });
+            const pathOrder = path.map(p => locations.indexOf(p) + 1).join(' → ');
+            resultDiv.innerHTML = `<p class="text-lg font-semibold text-gray-800 dark:text-white">깊이 우선 탐색 (DFS) 완료</p><p class="text-md text-gray-600 dark:text-gray-300 mt-1"><strong>탐색 순서:</strong> ${pathOrder}</p><p class="text-md text-gray-600 dark:text-gray-300"><strong>해당 경로 총 거리:</strong> ${totalDistance.toFixed(2)}</p>`;
+            resultDiv.classList.remove('opacity-0');
+        }
+
+        function findTspRoute() {
+            if (locations.length < 2) {
+                alert('대한민국 외에 최소 1곳 이상의 여행지를 추가해주세요.');
+                return;
+            }
+            drawAll(); 
+            let unvisited = [...locations];
+            let path = [unvisited.shift()]; // 시작점은 항상 대한민국
+            let totalDistance = 0;
+            while (unvisited.length > 0) {
+                let currentPoint = path[path.length - 1];
+                let nearestIndex = -1;
+                let minDistance = Infinity;
+                for (let i = 0; i < unvisited.length; i++) {
+                    const distance = getDistance(currentPoint, unvisited[i]);
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        nearestIndex = i;
+                    }
+                }
+                totalDistance += minDistance;
+                path.push(unvisited.splice(nearestIndex, 1)[0]);
+            }
+            const lastPoint = path[path.length - 1];
+            const firstPoint = path[0];
+            totalDistance += getDistance(lastPoint, firstPoint);
+            path.push(firstPoint); 
+
+            drawTspRoute(path, totalDistance);
+        }
+        
+        function animateMst() {
+            if (locations.length < 2) {
+                alert('대한민국 외에 최소 1곳 이상의 여행지를 추가해주세요.');
+                return;
+            }
+            if (isAnimating) return;
+            isAnimating = true;
+            toggleButtons(false);
+            findMstBtn.classList.add('is-loading');
+            resultDiv.classList.add('opacity-0');
+            drawAll();
+            let visited = new Set([locations[0]]);
+            let unvisited = new Set(locations.slice(1));
+            let mstEdges = [];
+            let totalWeight = 0;
+            const animationStep = () => {
+                if (unvisited.size === 0) {
+                    isAnimating = false;
+                    toggleButtons(true);
+                    findMstBtn.classList.remove('is-loading');
+                    displayMstResult(mstEdges, totalWeight);
+                    return;
+                }
+                let minEdge = { from: null, to: null, distance: Infinity };
+                for (const visitedNode of visited) {
+                    for (const unvisitedNode of unvisited) {
+                        const distance = getDistance(visitedNode, unvisitedNode);
+                        if (distance < minEdge.distance) {
+                            minEdge = { from: visitedNode, to: unvisitedNode, distance: distance };
+                        }
+                    }
+                }
+                drawAll();
+                ctx.beginPath();
+                mstEdges.forEach(edge => {
+                    ctx.moveTo(edge.from.x, edge.from.y);
+                    ctx.lineTo(edge.to.x, edge.to.y);
+                });
+                ctx.strokeStyle = '#22c55e';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(minEdge.from.x, minEdge.from.y);
+                ctx.lineTo(minEdge.to.x, minEdge.to.y);
+                ctx.strokeStyle = '#f59e0b';
+                ctx.lineWidth = 4;
+                ctx.setLineDash([6, 6]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                visited.forEach(node => {
+                    if (locations.indexOf(node) === 0) {
+                        drawLocations(); // 국기 다시 그리기
+                    } else {
+                        ctx.beginPath();
+                        ctx.arc(node.x, node.y, pointRadius, 0, Math.PI * 2);
+                        ctx.fillStyle = '#22c55e';
+                        ctx.fill();
+                    }
+                });
+                drawLocations(); // 숫자 다시 그리기 위해 호출
+                setTimeout(() => {
+                    visited.add(minEdge.to);
+                    unvisited.delete(minEdge.to);
+                    mstEdges.push(minEdge);
+                    totalWeight += minEdge.distance;
+                    animationStep();
+                }, 600);
+            };
+            animationStep();
+        }
+
+        function animateDfs() {
+            if (locations.length < 2) {
+                alert('대한민국 외에 최소 1곳 이상의 여행지를 추가해주세요.');
+                return;
+            }
+            if (isAnimating) return;
+            isAnimating = true;
+            toggleButtons(false);
+            findDfsBtn.classList.add('is-loading');
+            resultDiv.classList.add('opacity-0');
+            drawAll();
+            let stack = [locations[0]];
+            let visited = new Set();
+            let path = [];
+            const animationStep = () => {
+                if (stack.length === 0) {
+                    isAnimating = false;
+                    toggleButtons(true);
+                    findDfsBtn.classList.remove('is-loading');
+                    displayDfsResult(path);
+                    return;
+                }
+                const currentNode = stack.pop();
+                if (visited.has(currentNode)) {
+                    animationStep();
+                    return;
+                }
+                visited.add(currentNode);
+                path.push(currentNode);
+                drawAll();
+                if(path.length > 1) {
+                    ctx.beginPath();
+                    ctx.moveTo(path[0].x, path[0].y);
+                    for (let i = 1; i < path.length; i++) ctx.lineTo(path[i].x, path[i].y);
+                    ctx.strokeStyle = '#0ea5e9';
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                }
+                path.forEach((node, index) => {
+                    if(index > 0){
+                        ctx.beginPath();
+                        ctx.arc(node.x, node.y, pointRadius, 0, Math.PI * 2);
+                        ctx.fillStyle = '#0ea5e9';
+                        ctx.fill();
+                    }
+                });
+                ctx.beginPath();
+                ctx.arc(currentNode.x, currentNode.y, pointRadius + 2, 0, Math.PI * 2);
+                ctx.fillStyle = '#38bdf8';
+                ctx.fill();
+                drawLocations();
+                const neighbors = locations.filter(loc => !visited.has(loc));
+                neighbors.sort((a, b) => getDistance(currentNode, b) - getDistance(currentNode, a));
+                neighbors.forEach(neighbor => stack.push(neighbor));
+                setTimeout(animationStep, 600);
+            };
+            animationStep();
+        }
+
+        canvas.addEventListener('click', (event) => {
+            if (isAnimating) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            locations.push({ x, y });
+            drawAll();
+        });
+
+        findTspBtn.addEventListener('click', findTspRoute);
+        findMstBtn.addEventListener('click', animateMst);
+        findDfsBtn.addEventListener('click', animateDfs);
+
+        clearBtn.addEventListener('click', () => {
+            if(isAnimating) return;
+            locations.splice(1);
+            resultDiv.innerHTML = '';
+            resultDiv.classList.add('opacity-0');
+            drawAll();
+        });
+
+        window.addEventListener('resize', resizeCanvas);
+    </script>
+</body>
+</html>
+
